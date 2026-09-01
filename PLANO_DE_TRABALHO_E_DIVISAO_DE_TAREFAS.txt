@@ -1,0 +1,74 @@
+================================================================================
+                    DIVISÃO DE TAREFAS DO PROJETO (ENEM + ANEEL)
+================================================================================
+
+--------------------------------------------------------------------------------
+1. TAREFAS DE CADA INTEGRANTE
+--------------------------------------------------------------------------------
+
+[ CAUÃ ]
+--------
+1. Subir o repositório inicial no GitHub e configurar o Git para o grupo.
+2. Ingestão da API da ANEEL (JSON) para a camada Bronze:
+   - Arquivo: src/ingestion/ingest_aneel_api.py
+   - Implementar paginação, retry automático, metadados (_ingestion_time, _source, _load_id, _record_hash), idempotência e quarentena de falhas.
+3. Tratamento dos dados da ANEEL para a camada Silver:
+   - Arquivo: src/processing/bronze_to_silver.py (função process_aneel_silver)
+   - Padronizar colunas e tipos (id_municipio_ibge, ano, mes, num_fec, num_dec).
+
+
+[ INTEGRANTE 2 ]
+----------------
+1. Ingestão do CSV do ENEM para a camada Bronze:
+   - Arquivo: src/ingestion/ingest_enem_csv.py
+   - Tratar encoding (latin1/utf-8), separador (;) e leitura em lotes (chunksize).
+   - Adicionar os 4 metadados técnicos obrigatórios e salvar em Parquet.
+2. Tratamento dos dados do ENEM para a camada Silver:
+   - Arquivo: src/processing/bronze_to_silver.py (função process_enem_silver)
+   - Remover dados individuais/sensíveis (NU_INSCRICAO) e padronizar o código IBGE do município.
+3. Fazer a auditoria do JOIN entre ENEM e ANEEL:
+   - Arquivo: src/processing/bronze_to_silver.py (função audit_join_silver)
+   - Relatar quantos municípios casaram no cruzamento e quantos ficaram órfãos.
+
+
+[ INTEGRANTE 3 ]
+----------------
+1. Criação da base Gold (ML-Ready):
+   - Arquivo: src/processing/silver_to_gold.py
+   - Aplicar o corte temporal t0 (31 de Julho).
+   - Agregar as features elétricas na Janela de Observação (Jan a Jul).
+   - Criar o label target_abstencao_critica na Janela de Predição (Novembro).
+2. Treinamento do Modelo Preditivo:
+   - Arquivo: src/model/train_predictor.py
+   - Criar baseline trivial e treinar o modelo com split temporal e seed fixa.
+3. Cálculo da Decisão de Negócio:
+   - Arquivo: src/model/evaluate.py
+   - Calcular custos de falsos positivos vs ganhos de falsos negativos para a SEDUC-PA/MEC.
+
+
+--------------------------------------------------------------------------------
+2. ORDEM DE EXECUÇÃO (PASSO A PASSO)
+--------------------------------------------------------------------------------
+
+1º PASSO (Cauã):
+   Criar o repositório no GitHub, subir os arquivos iniciais e passar o link para o grupo.
+
+2º PASSO (Todos):
+   Clonar o repositório, criar o venv e rodar "pip install -r requirements.txt".
+
+3º PASSO (Cauã e Integrante 2 em paralelo):
+   - Cauã roda: python src/ingestion/ingest_aneel_api.py (gera dados da ANEEL na Bronze).
+   - Integrante 2 roda: python src/ingestion/ingest_enem_csv.py (gera dados do ENEM na Bronze).
+
+4º PASSO (Cauã e Integrante 2):
+   - Cauã ajusta a limpeza da ANEEL na Silver.
+   - Integrante 2 ajusta a limpeza do ENEM na Silver e roda o JOIN (python src/processing/bronze_to_silver.py).
+
+5º PASSO (Integrante 3):
+   - Gera a base Gold ML-Ready (python src/processing/silver_to_gold.py).
+   - Treina o modelo (python src/model/train_predictor.py).
+   - Roda a análise de custos da decisão (python src/model/evaluate.py).
+
+6º PASSO (Todos):
+   Revisar o pipeline completo e estudar o checklist para a arguição com o professor.
+================================================================================
