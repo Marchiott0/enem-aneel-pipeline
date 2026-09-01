@@ -5,8 +5,17 @@ Calcula:
 - Custo logístico de falsos positivos (geradores alocados desnecessariamente);
 - Custo social de falsos negativos (municípios críticos sem suporte onde houve alta evasão).
 """
+import sys
+from pathlib import Path
+
+# Adiciona o diretório raiz do projeto ao sys.path para permitir execução direta
+PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
 import numpy as np
 from src.utils.logger import get_logger
+
 
 logger = get_logger("evaluate_decision")
 

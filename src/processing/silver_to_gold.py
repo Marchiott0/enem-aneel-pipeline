@@ -7,10 +7,19 @@ Responsabilidades:
 - Garantia de blindagem anti-leakage (sem contaminação futura);
 - Exportação da base final orientada à decisão para data/gold/ml_ready/.
 """
+import sys
+from pathlib import Path
+
+# Adiciona o diretório raiz do projeto ao sys.path para permitir execução direta
+PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
 import pandas as pd
 import numpy as np
 from src.config import SILVER_JOINED_DIR, GOLD_ANALYTICS_DIR, GOLD_ML_READY_DIR, T0_DATE
 from src.utils.logger import get_logger
+
 
 logger = get_logger("silver_to_gold")
 

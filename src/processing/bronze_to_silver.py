@@ -6,14 +6,22 @@ Responsabilidades:
 - Quarentena para registros inconsistentes;
 - Auditoria de integridade do JOIN (contagem de casados e órfãos).
 """
-import pandas as pd
+import sys
 from pathlib import Path
+
+# Adiciona o diretório raiz do projeto ao sys.path para permitir execução direta
+PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
+import pandas as pd
 from src.config import (
     BRONZE_ANEEL_DIR, BRONZE_ENEM_DIR,
     SILVER_ANEEL_DIR, SILVER_ENEM_DIR, SILVER_JOINED_DIR,
     QUARANTINE_ANEEL_DIR, QUARANTINE_ENEM_DIR
 )
 from src.utils.logger import get_logger
+
 
 logger = get_logger("bronze_to_silver")
 

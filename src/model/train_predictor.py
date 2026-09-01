@@ -6,12 +6,21 @@ Responsabilidades:
 - Treinamento de classificadores (ex: LogisticRegression, Random Forest);
 - Validação com métricas de negócio (PR-AUC, F1, Recall).
 """
+import sys
+from pathlib import Path
+
+# Adiciona o diretório raiz do projeto ao sys.path para permitir execução direta
+PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import classification_report, roc_auc_score
 from src.config import GOLD_ML_READY_DIR, RANDOM_SEED
 from src.utils.logger import get_logger
+
 
 logger = get_logger("train_predictor")
 

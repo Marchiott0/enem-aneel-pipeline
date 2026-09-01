@@ -32,11 +32,12 @@ for d in [
 ]:
     d.mkdir(parents=True, exist_ok=True)
 
-# Parâmetros de Ingestão ANEEL
-ANEEL_RESOURCE_ID = os.getenv("ANEEL_RESOURCE_ID", "74100dc8-a832-4752-95f3-cdd09d4eb4af")
+# Parâmetros de Ingestão ANEEL (Indicadores Coletivos de Continuidade DEC/FEC 2020-2029)
+ANEEL_RESOURCE_ID = os.getenv("ANEEL_RESOURCE_ID", "4493985c-baea-429c-9df5-3030422c71d7")
 ANEEL_API_BASE_URL = os.getenv("ANEEL_API_BASE_URL", "https://dadosabertos.aneel.gov.br/api/3/action/datastore_search")
 
 # Parâmetros de Filtro e Escopo
 UF_TARGET = os.getenv("UF_TARGET", "PA")
 RANDOM_SEED = int(os.getenv("RANDOM_SEED", "42"))
 T0_DATE = os.getenv("T0_DATE", "2024-07-31")
+

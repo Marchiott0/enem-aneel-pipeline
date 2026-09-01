@@ -7,6 +7,14 @@ Implementa:
 - Idempotência por deduplicação de hash;
 - Quarentena para falhas de requisição.
 """
+import sys
+from pathlib import Path
+
+# Adiciona o diretório raiz do projeto ao sys.path para permitir execução direta
+PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
 import requests
 import pandas as pd
 import hashlib
@@ -16,6 +24,7 @@ from tenacity import retry, stop_after_attempt, wait_exponential
 
 from src.config import BRONZE_ANEEL_DIR, QUARANTINE_ANEEL_DIR, ANEEL_API_BASE_URL, ANEEL_RESOURCE_ID
 from src.utils.logger import get_logger
+
 
 logger = get_logger("ingest_aneel_api")
 

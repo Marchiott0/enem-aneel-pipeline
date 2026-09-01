@@ -7,14 +7,22 @@ Implementa:
 - Idempotência com deduplicação;
 - Quarentena para linhas malformadas.
 """
+import sys
+from pathlib import Path
+
+# Adiciona o diretório raiz do projeto ao sys.path para permitir execução direta
+PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
 import pandas as pd
 import hashlib
 import uuid
 from datetime import datetime
-from pathlib import Path
 
 from src.config import BRONZE_ENEM_DIR, QUARANTINE_ENEM_DIR, UF_TARGET
 from src.utils.logger import get_logger
+
 
 logger = get_logger("ingest_enem_csv")
 
