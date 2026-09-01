@@ -1,4 +1,4 @@
-# PROJETO INTEGRADOR — DA INGESTÃO À DECISÃO
+# DIRETRIZES DA DISCIPLINA & ROTEIRO DE EXECUÇÃO
 
 ---
 
@@ -114,10 +114,10 @@ O pipeline deve implementar, no mínimo, três formas distintas de ingestão:
 
 ---
 
-## 8. Requisito 6 — Tomada de Decisão & Integridade
+## 8. Requisito 6 & 9 — Tomada de Decisão, IA e Integridade
 - Declarar o decisor real, a ação concreta a ser tomada, os custos detalhados de falsos positivos e falsos negativos, o limiar (*threshold*) de decisão e as limitações do pipeline.
-- Ferramentas de IA generativa são permitidas, contudo **todo integrante do grupo deve saber explicar qualquer trecho de código**.
-- Dados sensíveis ou pessoais (PII) devem ser anonimizados ou descartados logo na camada Silver.
+- Ferramentas de IA generativa são permitidas e devem ser declaradas no README. Todo integrante do grupo deve saber explicar qualquer trecho de código.
+- Dados sensíveis ou pessoais (PII) do ENEM devem ser anonimizados e agregados logo na camada Silver.
 
 ---
 ---
@@ -125,7 +125,7 @@ O pipeline deve implementar, no mínimo, três formas distintas de ingestão:
 # PARTE 2: ROTEIRO DE EXECUÇÃO DO GRUPO (ENEM + ANEEL)
 
 ## 1. A Frase de Decisão (O Escopo de Negócio)
-> *"Cruzando as bases do **ENEM (INEP)** e **Qualidade de Energia (ANEEL)**, identificamos que municípios com alta instabilidade elétrica nos meses de preparação sofrem impacto drástico na abstenção e nas notas. Recomendamos que a **Secretaria de Educação do Estado do Pará (SEDUC-PA)** e o **MEC** façam a **alocação de geradores móveis e distribuição de planos de estudo offline** nos próximos **3 meses (agosto a outubro)**, priorizando os **50 municípios** com maior probabilidade predita de falha estrutural na infraestrutura elétrica. Se agir, o ganho esperado é **garantir acesso equitativo e evitar a evasão de até X mil candidatos**; se errarmos, o custo é **R$ Z referentes à logística e locação desnecessária de geradores para polos de prova**."*
+> *"Cruzando as bases do **ENEM (INEP)** e **Qualidade de Energia (ANEEL)**, identificamos que municípios com alta instabilidade elétrica nos meses de preparação sofrem impacto drástico na abstenção e nas notas. Recomendamos que a **Secretaria de Educação do Estado do Pará (SEDUC-PA)** e o **MEC** façam a **alocação de geradores móveis e distribuição de planos de estudo offline** nos próximos **3 meses (agosto a outubro)**, priorizando os **50 municípios** com maior probabilidade predita de falha estrutural na infraestrutura elétrica. Se agir, o ganho esperado é **garantir acesso equitativo e evitar a evasão de até milhares de candidatos**; se errarmos, o custo é **referente à logística e locação de geradores para polos de prova**."*
 
 ---
 
@@ -133,151 +133,28 @@ O pipeline deve implementar, no mínimo, três formas distintas de ingestão:
 - **Ponto de Corte ($t_0$):** 31 de Julho do ano de aplicação do ENEM.
 - **Janela de Observação:** Janeiro a Julho do mesmo ano (Features de energia: FEC, DEC médios das distribuidoras municipais).
 - **Janela de Predição:** Novembro (Mês oficial de aplicação das provas do ENEM).
-- **Label (`abstencao_critica`):** `1` se o município teve abstenção $> X\%$ no ENEM; `0` caso contrário.
+- **Label (`abstencao_critica`):** `1` se o município teve abstenção $> 35\%$ no ENEM; `0` caso contrário.
 - **Coorte:** Municípios do estado do Pará (`UF = 'PA'`) que possuam polos de prova cadastrados no INEP.
-- **Split:** Temporal. Treinar com o histórico do ENEM 2023/2024 e testar no ENEM 2025 (impede vazamento temporal).
+- **Split:** Temporal. Treinar com o histórico de anos anteriores e testar no ano mais recente (impede vazamento temporal).
 - **Chave de Cruzamento:** Código IBGE do Município (7 dígitos numéricos).
 
 ---
 
-## 3. Estrutura de Diretórios do Projeto (Requisito 4)
+## 3. Módulos Implementados no Código-Fonte
 
-```plaintext
-isaacprofessor/
-├── .gitignore
-├── README.md
-├── requirements.txt
-├── data/                          # NUNCA COMMITAR (no .gitignore)
-│   ├── bronze/
-│   │   ├── aneel/
-│   │   └── enem/
-│   ├── silver/
-│   │   ├── aneel/
-│   │   ├── enem/
-│   │   └── joined/
-│   ├── gold/
-│   │   ├── analytics/
-│   │   └── ml_ready/
-│   └── quarantine/
-│       ├── aneel/
-│       └── enem/
-└── src/
-    ├── ingestion/
-    │   ├── ingest_aneel_api.py    # Ingestão API REST (JSON)
-    │   └── ingest_enem_csv.py     # Ingestão Arquivo (CSV)
-    ├── processing/
-    │   ├── bronze_to_silver.py    # Tratamento, tipagem, integridade
-    │   └── silver_to_gold.py      # Agregações e construção da ML-Ready
-    └── model/
-        └── train_predictor.py     # Treinamento com validação temporal anti-leakage
-```
+O código oficial e executável do pipeline encontra-se organizado na pasta `src/`:
 
----
+1. **Ingestão ANEEL (API REST JSON):**
+   - Arquivo: [`src/ingestion/ingest_aneel_api.py`](file:///c:/Users/SuporteACC/Desktop/py/C/isaacprofessor/src/ingestion/ingest_aneel_api.py)
+   - Atende aos requisitos de paginação (`limit`/`offset`), retry com backoff exponencial via `tenacity`, 4 metadados técnicos obrigatórios, idempotência com hash SHA-256 e quarentena de falhas.
 
-## 4. Código Base de Ingestão: API ANEEL (Camada Bronze)
+2. **Ingestão ENEM (Arquivo CSV):**
+   - Arquivo: [`src/ingestion/ingest_enem_csv.py`](file:///c:/Users/SuporteACC/Desktop/py/C/isaacprofessor/src/ingestion/ingest_enem_csv.py)
+   - Atende aos requisitos de leitura em lotes (`chunksize`), tratamento de delimitador/encoding e anexação de metadados técnicos.
 
-Script que atende aos requisitos de:
-- Paginação controlada;
-- Backoff exponencial com *retry*;
-- Metadados técnicos (`_ingestion_time`, `_source`, `_load_id`, `_record_hash`);
-- Idempotência com deduplicação por hash;
-- Quarentena para falhas de extração.
+3. **Processamento Silver & Auditoria de JOIN:**
+   - Arquivo: [`src/processing/bronze_to_silver.py`](file:///c:/Users/SuporteACC/Desktop/py/C/isaacprofessor/src/processing/bronze_to_silver.py)
+   - Anonimização LGPD, tipagem forte e contagem de municípios casados e órfãos.
 
-```bash
-pip install requests pandas tenacity pyarrow
-```
-
-```python
-# src/ingestion/ingest_aneel_api.py
-import requests
-import pandas as pd
-import hashlib
-from datetime import datetime
-from tenacity import retry, stop_after_attempt, wait_exponential
-import os
-import uuid
-
-# Configuração de Diretórios Locais
-BRONZE_DIR = "../../data/bronze/aneel"
-QUARANTINE_DIR = "../../data/quarantine/aneel"
-os.makedirs(BRONZE_DIR, exist_ok=True)
-os.makedirs(QUARANTINE_DIR, exist_ok=True)
-
-# Requisito 2: API REST com retry e backoff
-@retry(stop=stop_after_attempt(5), wait=wait_exponential(multiplier=1, min=2, max=10))
-def fetch_aneel_data(limit=100, offset=0):
-    """
-    Busca indicadores de continuidade (DEC/FEC) na API da ANEEL (CKAN).
-    Verifique o resource_id mais atual no portal dadosabertos.aneel.gov.br.
-    """
-    resource_id = "74100dc8-a832-4752-95f3-cdd09d4eb4af"
-    url = f"https://dadosabertos.aneel.gov.br/api/3/action/datastore_search?resource_id={resource_id}&limit={limit}&offset={offset}"
-    
-    response = requests.get(url, timeout=15)
-    response.raise_for_status() # Trigger para o @retry em caso de falha (500, 502, 503)
-    
-    return response.json()
-
-def generate_hash(row):
-    """Gera hash SHA-256 para rastreabilidade e verificação de duplicidade."""
-    row_string = "".join(str(val) for val in row.values)
-    return hashlib.sha256(row_string.encode("utf-8")).hexdigest()
-
-def ingest_to_bronze():
-    print("Iniciando ingestão da camada Bronze (API ANEEL)...")
-    load_id = str(uuid.uuid4())
-    ingestion_time = datetime.now().isoformat()
-    
-    all_records = []
-    limit = 1000
-    offset = 0
-    has_more = True
-    
-    # Requisito 2: Paginação controlada
-    while has_more:
-        try:
-            data = fetch_aneel_data(limit, offset)
-            records = data["result"]["records"]
-            
-            if not records:
-                has_more = False
-                break
-                
-            all_records.extend(records)
-            offset += limit
-            print(f"Coletados {offset} registros até o momento...")
-            
-            # Limite preventivo para debug local. Ajustar conforme necessário em produção.
-            if offset >= 5000: 
-                break 
-            
-        except Exception as e:
-            error_msg = f"Falha na extração no offset {offset}. Erro: {e}"
-            print(error_msg)
-            # Requisito 2: Quarentena de falhas
-            with open(f"{QUARANTINE_DIR}/erro_extracao_{load_id}.txt", "w") as f:
-                f.write(error_msg)
-            break
-
-    if all_records:
-        df = pd.DataFrame(all_records)
-        
-        # Requisito 2 e 3: Metadados Técnicos obrigatórios na Bronze
-        df["_ingestion_time"] = ingestion_time
-        df["_source"] = "API_ANEEL_CKAN"
-        df["_load_id"] = load_id
-        df["_record_hash"] = df.apply(generate_hash, axis=1)
-        
-        # Requisito 2: Idempotência (Garante que execuções duplas não afetam a base final)
-        df.drop_duplicates(subset=["_record_hash"], inplace=True)
-        
-        # Particionamento simulado no nome do arquivo (YYYYMMDD)
-        date_partition = datetime.now().strftime("%Y%m%d")
-        file_path = f"{BRONZE_DIR}/aneel_dec_fec_{date_partition}.parquet"
-        
-        df.to_parquet(file_path, index=False)
-        print(f"Sucesso! {len(df)} registros validados e injetados em {file_path}")
-
-if __name__ == "__main__":
-    ingest_to_bronze()
-```
+4. **Camada Gold ML-Ready & Modelagem:**
+   - Arquivos: [`src/processing/silver_to_gold.py`](file:///c:/Users/SuporteACC/Desktop/py/C/isaacprofessor/src/processing/silver_to_gold.py), [`src/model/train_predictor.py`](file:///c:/Users/SuporteACC/Desktop/py/C/isaacprofessor/src/model/train_predictor.py) e [`src/model/evaluate.py`](file:///c:/Users/SuporteACC/Desktop/py/C/isaacprofessor/src/model/evaluate.py).
