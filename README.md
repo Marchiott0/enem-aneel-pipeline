@@ -120,13 +120,16 @@ cp .env.example .env
 ## 5. Uso de IA, Integridade e Privacidade de Dados (Requisito 9)
 
 ### 5.1. Declaração de Uso de IA Generativa
-Em conformidade com as diretrizes da disciplina, declaramos o uso de ferramentas de IA generativa no projeto:
-- **Finalidade do Uso:**
-  - Estruturação da arquitetura de diretórios e padrões de projeto (scaffolding);
-  - Criação de templates de código modular com tipagem estática e *docstrings*;
-  - Formatação e estruturação da documentação em Markdown (`README.md`, `dicionario_dados.md`, `arquitetura_pipeline.md`).
-- **Arquivos Estruturados:** Módulos em `src/ingestion/`, `src/processing/`, `src/model/` e `docs/`.
-- **Compromisso do Grupo:** Todo o código, pipeline e lógica de negócio foram revisados, testados e são de pleno domínio técnico de todos os integrantes do grupo, estando totalmente aptos para a arguição presencial.
+Em estrita conformidade com a **Cláusula 9 das Diretrizes da Disciplina**, declaramos os pontos em que ferramentas de IA generativa foram utilizadas como suporte ao desenvolvimento:
+
+| Componente / Módulo | Finalidade do Uso de IA | Descrição do Auxílio Prestado |
+| :--- | :--- | :--- |
+| **Arquitetura & Configuração** | Estruturação de Projeto | Apoio na modelagem de pastas do pipeline Medalhão, arquivos `.gitignore`, `requirements.txt` e `.env.example`. |
+| **Documentação Técnica** | Padronização e Especificação | Estruturação e formatação em Markdown dos arquivos `README.md`, `dicionario_dados.md`, `arquitetura_pipeline.md` e `diretrizes_disciplina.md`. |
+| **`src/ingestion/ingest_aneel_api.py`** | Ingestão e Resiliência (API ANEEL) | Apoio na estruturação da função de requisição com *retry* e *backoff exponencial* via `tenacity`, paginação controlada, geração de hash SHA-256 para idempotência, injeção de metadados técnicos de auditoria e tratamento de quarentena. |
+| **`src/config.py` & Scripts Modulares** | Configuração e Execução | Apoio na definição centralizada de caminhos e parâmetros, além da configuração do bootstrap de importação (`sys.path`) para permitir execução direta via terminal. |
+
+> **Declaração de Domínio Técnico:** Todo código, pipeline, arquitetura e cálculos implementados com auxílio de ferramentas de IA foram integralmente revisados, testados e validados pelo grupo. Todos os integrantes dominam tecnicamente os componentes do projeto e estão plenamente aptos a justificar qualquer linha de código durante a arguição oral.
 
 ### 5.2. Privacidade e Conformidade (LGPD)
 - **Tratamento de Dados Pessoais:** O pipeline consome apenas dados públicos e abertos.
@@ -138,4 +141,6 @@ Em conformidade com as diretrizes da disciplina, declaramos o uso de ferramentas
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | **Microdados do ENEM** | INEP / MEC | CSV (Arquivo) | Aberta / Domínio Público Federal | [gov.br/inep](https://www.gov.br/inep/pt-br/acesso-a-informacao/dados-abertos/microdados/enem) | 26/08/2026 |
 | **Indicadores DEC/FEC** | ANEEL | JSON (API REST CKAN) | Política de Dados Abertos do Poder Executivo Federal | [dadosabertos.aneel.gov.br](https://dadosabertos.aneel.gov.br/api/3/action/datastore_search) | 26/08/2026 |
+
+
 
