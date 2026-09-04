@@ -1,6 +1,5 @@
 """
-Processamento Bronze -> Silver para o ENEM, e auditoria do JOIN
-entre ENEM (Silver) e ANEEL (Silver) por código IBGE de município.
+Processamento Bronze -> Silver para o ENEM
 
 Adaptado para usar os caminhos e nomes de metadados definidos em src/config.py
 (mesmos usados no ingest_enem_csv.py do projeto).
@@ -33,8 +32,7 @@ RELATORIO_JOIN_PATH = SILVER_JOINED_DIR / "relatorio_join_enem_aneel.md"
 # 1. Silver do ENEM
 def padronizar_codigo_municipio(serie: pd.Series) -> pd.Series:
     """
-    Garante que o código IBGE do município tenha 7 dígitos, como string,
-    sem zeros à esquerda faltando.
+    Garante que o código IBGE do município tenha 7 dígitos
     """
     return serie.astype(str).str.strip().str.zfill(7)
 
@@ -43,7 +41,7 @@ def process_enem_silver() -> pd.DataFrame:
     """
     Lê todos os parquets da Bronze do ENEM (todos os anos já ingeridos),
     aplica:
-    - remoção de dado sensível (NU_INSCRICAO)
+    - remoção de dado sensível
     - padronização do código IBGE do município
     - tipagem forte nas colunas numéricas
     - deduplicação pela chave técnica (_record_hash)
@@ -85,8 +83,7 @@ def process_enem_silver() -> pd.DataFrame:
     return df
 
 
-# --- 2. Auditoria do JOIN ------------------------------------------------
-
+# --- 2. Auditoria do JOIN ENEM x ANEEL ---
 def audit_join_silver(coluna_chave: str = "codigo_municipio") -> pd.DataFrame:
     """
     Cruza ENEM Silver com ANEEL Silver pelo código IBGE do município
@@ -146,8 +143,8 @@ Chave de cruzamento: `{coluna_chave}`
 | Registros no join final | {len(merged)} |
 
 ## O que foi feito com os órfãos
-Os municípios órfãos (presentes em só uma das bases) foram **excluídos** do
-join principal (inner join) e não entram na base ML-Ready. Ajustem este
+Os municípios órfãos foram **excluídos** do
+join principal e não entram na base ML-Ready. Ajustem este
 texto se decidirem tratar diferente (ex: manter com valor nulo/flag).
 """
 
