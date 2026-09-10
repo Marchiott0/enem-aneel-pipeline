@@ -37,6 +37,6 @@ ANEEL_RESOURCE_ID = os.getenv("ANEEL_RESOURCE_ID", "74100dc8-a832-4752-95f3-cdd0
 ANEEL_API_BASE_URL = os.getenv("ANEEL_API_BASE_URL", "https://dadosabertos.aneel.gov.br/api/3/action/datastore_search")
 
 # Parâmetros de Filtro e Escopo
-UF_TARGET = os.getenv("UF_TARGET", "PA")
+UF_TARGET = os.getenv("UF_TARGET", "PA,AM,RO,AP,RO,RR,AC,TO").split(",")  
 RANDOM_SEED = int(os.getenv("RANDOM_SEED", "42"))
 T0_DATE = os.getenv("T0_DATE", "2024-07-31")
