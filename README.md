@@ -124,13 +124,17 @@ Em conformidade com as diretrizes da disciplina, declaramos o uso de ferramentas
 - **Finalidade do Uso:**
   - Estruturação da arquitetura de diretórios e padrões de projeto (scaffolding);
   - Criação de templates de código modular com tipagem estática e *docstrings*;
+  - Auxílio na implementação do módulo de ingestão da API REST da ANEEL (paginação CKAN, backoff exponencial e mapeamento conjunto-município via recurso `indqual-municipio`);
+  - Auxílio na implementação da Camada Silver da ANEEL e padronização da chave relacional `codigo_municipio`;
+  - Auxílio no tratamento e agregação dos microdados do ENEM da granularidade de candidatos para taxas municipais de abstenção em conformidade com a LGPD;
+  - Auxílio na implementação do split estritamente temporal anti-leakage e cálculo da matriz de impacto da decisão;
   - Formatação e estruturação da documentação em Markdown (`README.md`, `dicionario_dados.md`, `arquitetura_pipeline.md`).
-- **Arquivos Estruturados:** Módulos em `src/ingestion/`, `src/processing/`, `src/model/` e `docs/`.
+- **Arquivos Estruturados e Auxiliados:** Módulos em `src/ingestion/`, `src/processing/`, `src/model/` e `docs/`.
 - **Compromisso do Grupo:** Todo o código, pipeline e lógica de negócio foram revisados, testados e são de pleno domínio técnico de todos os integrantes do grupo, estando totalmente aptos para a arguição presencial.
 
 ### 5.2. Privacidade e Conformidade (LGPD)
 - **Tratamento de Dados Pessoais:** O pipeline consome apenas dados públicos e abertos.
-- **Anonimização e Agregação:** Qualquer identificador individual presente no arquivo bruto do ENEM (`NU_INSCRICAO`) é expurgado logo na transição da camada Bronze para a **Silver**, onde os dados são obrigatoriamente agregados em nível municipal (`id_municipio_ibge`). Nenhuma informação identificável de participantes chega à camada Gold ou aos modelos preditivos.
+- **Anonimização e Agregação:** Qualquer identificador individual presente no arquivo bruto do ENEM (`NU_INSCRICAO`) é expurgado logo na transição da camada Bronze para a **Silver**, onde os dados são obrigatoriamente agregados em nível municipal (`codigo_municipio`). Nenhuma informação identificável de participantes chega à camada Gold ou aos modelos preditivos.
 
 ### 5.3. Catálogo de Fontes, Licenças e Coleta
 
