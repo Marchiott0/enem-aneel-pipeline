@@ -25,7 +25,8 @@ def train():
         return None
 
     df = pd.read_parquet(ml_file)
-    features = ["fec_medio_jan_jul", "dec_horas_total_jan_jul", "dec_horas_medio_jan_jul"]
+    features = ["fec_medio_jan_jul", "dec_horas_total_jan_jul", "dec_horas_medio_jan_jul",
+            "fec_medio_reta_final", "dec_horas_total_reta_final", "dec_horas_pior_mes", "dec_variacao_ano"]
     target = "target_abstencao_critica"
 
     # Split Estritamente Temporal (Salvaguarda Anti-Leakage Obrigatória)

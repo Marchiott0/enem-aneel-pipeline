@@ -38,7 +38,8 @@ def simulate_decision_impact(n_priorizados: int = 50, custo_por_gerador: float =
     if clf is None:
         return None
 
-    features = ["fec_medio_jan_jul", "dec_horas_total_jan_jul", "dec_horas_medio_jan_jul"]
+    features = ["fec_medio_jan_jul", "dec_horas_total_jan_jul", "dec_horas_medio_jan_jul",
+            "fec_medio_reta_final", "dec_horas_total_reta_final", "dec_horas_pior_mes", "dec_variacao_ano"]
     df_teste["prob_risco_eletrico"] = clf.predict_proba(df_teste[features])[:, 1]
 
     # Ordena pelos municípios de maior risco predito
