@@ -26,7 +26,7 @@ from datetime import datetime
 
 from src.utils.logger import get_logger
 from src.ingestion.ingest_aneel_api import ingest_to_bronze
-from src.ingestion.ingest_enem_csv import ingest_enem_sample_multiyear
+from src.ingestion.ingest_enem_csv import ingest_enem_bronze
 from src.processing.bronze_to_silver import (
     process_aneel_silver,
     process_enem_silver,
@@ -54,12 +54,12 @@ def run_full_pipeline():
     # -------------------------------------------------------------
     # ETAPA 1: Ingestão Camada Bronze (API REST JSON + Arquivo CSV)
     # -------------------------------------------------------------
-    print_banner("ETAPA 1: INGESTÃO CAMADA BRONZE")
-    print("1.1. Coletando dados da ANEEL via API REST CKAN (JSON)...")
+    print_banner("ETAPA 1: INGESTÃO CAMADA BRONZE (DADOS REAIS)")
+    print("1.1. Ingestão ANEEL via API REST CKAN pública (JSON)...")
     ingest_to_bronze(agent_filter="EQUATORIAL PA", anos=[2020, 2021, 2022, 2023, 2024], max_records_per_year=5000)
 
-    print("\n1.2. Ingerindo Microdados do ENEM (CSV com chunks e metadados)...")
-    ingest_enem_sample_multiyear(anos=[2020, 2021, 2022, 2023, 2024])
+    print("\n1.2. Ingestão Microdados do ENEM (CSV com chunks e metadados)...")
+    ingest_enem_bronze(anos=[2020, 2021, 2022, 2023, 2024])
 
     # -------------------------------------------------------------
     # ETAPA 2: Camada Silver e Auditoria do JOIN

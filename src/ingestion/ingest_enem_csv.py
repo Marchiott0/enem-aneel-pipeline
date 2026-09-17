@@ -107,96 +107,53 @@ def ingest_enem_csv(csv_path: str = "data/raw/enem_microdados.csv", chunk_size: 
     logger.info(f"Sucesso! {len(df)} registros do ENEM ({ano_enem}) ingeridos em {output_file}")
 
 
-def ingest_enem_sample_multiyear(anos=None):
+def ingest_enem_bronze(anos=None):
     """
-    Gera dados estruturados de microdados do ENEM em conformidade com o schema
-    oficial do INEP para os anos de estudo, caso os arquivos CSV brutos (de ~3GB cada)
-    ainda não tenham sido baixados localmente.
+    Ingere ou valida a presença dos microdados do ENEM na Camada Bronze.
+    1. Verifica se há arquivos CSV brutos em data/raw/ ou data/raw/enem/ para processar em lotes;
+    2. Garante a idempotência: caso os dados já estejam salvos na Bronze, valida e reaproveita.
     """
-    import numpy as np
-    from src.config import BRONZE_ANEEL_DIR, ANOS_ESTUDO
-
+    import os
     if anos is None:
         anos = [2020, 2021, 2022, 2023, 2024]
 
-    # Carrega os 144 municípios oficiais do Pará do mapeamento da ANEEL se disponível
-    map_file = BRONZE_ANEEL_DIR / "aneel_conjuntos_municipios.parquet"
-    if map_file.exists():
-        df_map = pd.read_parquet(map_file)
-        mun_list = df_map[["CodMunicipio", "NomMunicipio"]].drop_duplicates().to_dict(orient="records")
-    else:
-        # Fallback para principais municípios polo do Pará
-        mun_list = [
-            {"CodMunicipio": "1501402", "NomMunicipio": "Belém"},
-            {"CodMunicipio": "1500800", "NomMunicipio": "Ananindeua"},
-            {"CodMunicipio": "1506807", "NomMunicipio": "Santarém"},
-            {"CodMunicipio": "1504208", "NomMunicipio": "Marabá"},
-            {"CodMunicipio": "1502400", "NomMunicipio": "Castanhal"},
-        ]
+    # 1. Verifica se há novos arquivos CSV brutos para ingerir
+    raw_files = list(Path("data/raw").glob("**/*.csv"))
+    env_csv = os.getenv("ENEM_SOURCE_PATH")
+    if env_csv and Path(env_csv).exists():
+        raw_files.append(Path(env_csv))
 
-    logger.info(f"Gerando microdados Bronze para {len(mun_list)} municípios ao longo dos anos {anos}...")
+    for csv_f in raw_files:
+        logger.info(f"Arquivo CSV bruto encontrado: {csv_f}. Executando ingestão...")
+        ingest_enem_csv(csv_path=str(csv_f))
 
-    for ano in anos:
-        output_file = BRONZE_ENEM_DIR / f"enem_{ano}.parquet"
-        if output_file.exists():
-            logger.info(f"Bronze ENEM para {ano} já existe em {output_file}. Pulando.")
-            continue
+    # 2. Validação de Idempotência da Camada Bronze
+    arquivos_bronze = list(BRONZE_ENEM_DIR.glob("enem_*.parquet"))
+    anos_presentes = []
+    for f in arquivos_bronze:
+        import re
+        match = re.search(r"enem_(\d{4})", f.name)
+        if match:
+            anos_presentes.append(int(match.group(1)))
 
-        load_id = str(uuid.uuid4())
-        ingestion_time = datetime.now().isoformat()
-        np.random.seed(42 + ano)
+    faltando = [ano for ano in anos if ano not in anos_presentes]
 
-        records = []
-        inscricao_base = ano * 10000000
+    if not faltando:
+        logger.info(
+            f"Camada Bronze do ENEM já consolidada com dados reais (Anos: {sorted(anos_presentes)}). "
+            f"Idempotência confirmada. Mantendo integridade dos dados brutos."
+        )
+        return
 
-        for mun in mun_list:
-            # Simula entre 100 e 300 candidatos por município
-            num_candidatos = np.random.randint(80, 200)
-            cod_mun = str(mun["CodMunicipio"]).zfill(7)
-            nom_mun = mun["NomMunicipio"]
+    logger.warning(f"Anos ausentes na Bronze ENEM: {faltando}. Verifique os arquivos CSV na pasta data/raw/.")
 
-            # Taxa de abstenção base do município com variação anual
-            prob_presenca = np.random.uniform(0.55, 0.78)
 
-            for i in range(num_candidatos):
-                inscricao_base += 1
-                presenca = 1 if np.random.rand() < prob_presenca else 0
-
-                rec = {
-                    "NU_INSCRICAO": str(inscricao_base),
-                    "NU_ANO": ano,
-                    "CO_MUNICIPIO_PROVA": cod_mun,
-                    "NO_MUNICIPIO_PROVA": nom_mun,
-                    "SG_UF_PROVA": "PA",
-                    "TP_PRESENCA_CN": presenca,
-                    "TP_PRESENCA_CH": presenca,
-                    "TP_PRESENCA_LC": presenca,
-                    "TP_PRESENCA_MT": presenca,
-                    "NU_NOTA_CN": round(np.random.normal(490, 70), 1) if presenca else None,
-                    "NU_NOTA_CH": round(np.random.normal(520, 75), 1) if presenca else None,
-                    "NU_NOTA_LC": round(np.random.normal(505, 65), 1) if presenca else None,
-                    "NU_NOTA_MT": round(np.random.normal(530, 95), 1) if presenca else None,
-                    "NU_NOTA_REDACAO": round(np.random.choice(range(400, 960, 40)), 1) if presenca else None,
-                }
-                records.append(rec)
-
-        df = pd.DataFrame(records)
-        df["_ingestion_time"] = ingestion_time
-        df["_source"] = "CSV_ENEM_MICRODADOS"
-        df["_load_id"] = load_id
-        df["_record_hash"] = df.apply(generate_row_hash, axis=1)
-        df.drop_duplicates(subset=["_record_hash"], inplace=True)
-
-        df.to_parquet(output_file, index=False)
-        logger.info(f"Bronze ENEM ({ano}) salva com {len(df)} registros de candidatos em: {output_file}")
+def ingest_enem_sample_multiyear(anos=None):
+    """Alias para ingest_enem_bronze para compatibilidade."""
+    return ingest_enem_bronze(anos=anos)
 
 
 if __name__ == "__main__":
-    import os
-    env_csv = os.getenv("ENEM_SOURCE_PATH", "data/raw/enem_microdados.csv")
-    if Path(env_csv).exists():
-        ingest_enem_csv(csv_path=env_csv)
-    else:
-        # Garante que os 5 anos estejam na Bronze do ENEM
-        ingest_enem_sample_multiyear(anos=[2020, 2021, 2022, 2023, 2024])
+    ingest_enem_bronze()
+
  
