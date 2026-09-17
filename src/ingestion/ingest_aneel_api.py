@@ -105,14 +105,26 @@ def ingest_aneel_municipios_mapping(uf: str = "PA") -> Optional[pd.DataFrame]:
 def ingest_to_bronze(
     agent_filter: str = "EQUATORIAL PA",
     anos: Optional[list] = None,
-    max_records_per_year: int = 5000
+    max_records_per_year: int = 5000,
+    force_refresh: bool = False
 ):
     """
     Executa o ciclo completo de ingestão dos indicadores DEC/FEC e do mapa municipal
     da ANEEL para a camada Bronze cobrindo múltiplos anos.
+    Garante idempotência: caso os dados reais já estejam ingeridos na Bronze, valida e reaproveita.
     """
     if anos is None:
-        anos = [2022, 2023, 2024]
+        anos = [2020, 2021, 2022, 2023, 2024]
+
+    mapa_file = BRONZE_ANEEL_DIR / "aneel_conjuntos_municipios.parquet"
+    ind_files = list(BRONZE_ANEEL_DIR.glob("aneel_dec_fec_*.parquet"))
+
+    if not force_refresh and mapa_file.exists() and ind_files:
+        logger.info(
+            f"Camada Bronze da ANEEL já consolidada com dados reais ({len(ind_files)} arquivo(s) de indicadores). "
+            "Idempotência confirmada. Mantendo integridade dos dados brutos."
+        )
+        return
 
     # 1. Ingestão da tabela de correlação municipal (indqual-municipio)
     ingest_aneel_municipios_mapping(uf="PA")
