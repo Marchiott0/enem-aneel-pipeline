@@ -107,5 +107,5 @@ def ingest_enem_csv(csv_path: str = "data/raw/enem_microdados.csv", chunk_size: 
     logger.info(f"Sucesso! {len(df)} registros do ENEM ({ano_enem}) ingeridos em {output_file}")
  
 if __name__ == "__main__":
-    ingest_enem_csv(csv_path=r"C:\Users\anapa\Downloads\dados\microdados_enem_2022\DADOS\MICRODADOS_ENEM_2022.csv")
+    ingest_enem_csv(csv_path=r"C:\Users\anapa\Downloads\dados\microdados_enem_2021\DADOS\MICRODADOS_ENEM_2021.csv")
  
