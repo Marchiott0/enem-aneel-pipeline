@@ -1,4 +1,4 @@
-"""
+﻿"""
 Script de treinamento do modelo preditivo com salvaguardas anti-leakage.
 
 Responsabilidades:
@@ -121,7 +121,7 @@ def train():
     print(f"     * F1-Score do Baseline (Regra Cega / Chute mais comum): {f1_base:.4f}")
     print(f"       -> O QUE E: A pontuacao de quem chuta que tudo vai ficar calmo.")
     print(f"     * F1-Score do Modelo Inteligente: {f1_mod:.4f}")
-    print(f"       -> PRA QUE SERVE: Mostra se olhar a energia melhora a previsao (CORRIGIDO: nao e "prova"; compare tambem com a persistencia).")
+    print(f"       -> PRA QUE SERVE: Mostra se olhar a energia melhora a previsao (CORRIGIDO: nao e 'prova'; compare tambem com a persistencia).")
     print(f"     * PR-AUC do Baseline (moda): {pr_base:.4f} | do Modelo: {pr_auc:.4f}  (NOVO)")
     print(f"       -> O QUE E: area sob a curva precisao x recall; a referencia do acaso e a proporcao de positivos.")
     print(f"     * PR-AUC do Baseline de Persistencia (abstencao do ano anterior): {pr_persist:.4f}  (NOVO)")
