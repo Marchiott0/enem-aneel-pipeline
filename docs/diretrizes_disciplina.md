@@ -66,7 +66,7 @@ O pipeline deve implementar, no mínimo, três formas distintas de ingestão:
 3. **Banco relacional / Carga incremental:** full load ou incremental por watermark / micro-batch com checkpoint para fonte que se atualize.
 
 ### Obrigatoriedades da Ingestão:
-- **Metadados Técnicos (Camada Bronze):** `_ingestion_time`, `_source`, `_load_id` e `_record_hash`.
+- **Metadados Técnicos (Camada Bronze):** `_ingestion_time`, `_source`, `_source_object`, `_load_id` e `_record_hash`.
 - **Idempotência:** Rodar a ingestão duas vezes seguidas não pode duplicar dados nem gerar inconsistências.
 - **Quarentena:** Registros problemáticos vão para uma área separada (`data/quarantine/`). O job de ingestão não pode quebrar por dado sujo.
 
@@ -146,7 +146,7 @@ O código oficial e executável do pipeline encontra-se organizado na pasta `src
 
 1. **Ingestão ANEEL (API REST JSON):**
    - Arquivo: [`src/ingestion/ingest_aneel_api.py`](file:///c:/Users/SuporteACC/Desktop/py/C/isaacprofessor/src/ingestion/ingest_aneel_api.py)
-   - Atende aos requisitos de paginação (`limit`/`offset`), retry com backoff exponencial via `tenacity`, 4 metadados técnicos obrigatórios, idempotência com hash SHA-256 e quarentena de falhas.
+   - Atende aos requisitos de paginação (`limit`/`offset`), retry com backoff exponencial via `tenacity`, 5 metadados técnicos obrigatórios, idempotência com hash SHA-256, micro-batches com checkpoint por ano/offset e quarentena de falhas.
 
 2. **Ingestão ENEM (Arquivo CSV):**
    - Arquivo: [`src/ingestion/ingest_enem_csv.py`](file:///c:/Users/SuporteACC/Desktop/py/C/isaacprofessor/src/ingestion/ingest_enem_csv.py)

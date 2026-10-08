@@ -8,15 +8,15 @@
 ```
 [ INEP (CSV em Chunks) ] ───► Ingestão Bronze (Hash + Metadados) ───► data/bronze/enem/
                                                                            │
-[ ANEEL (API REST CKAN) ] ──► Ingestão Bronze (Retry + Hash)    ───► data/bronze/aneel/
+[ ANEEL (API REST CKAN) ] ──► Ingestão Bronze (Retry + Hash + Micro-batch/Checkpoint) ───► data/bronze/aneel/
                                                                            │
                                                      ┌─────────────────────┴─────────────────────┐
-                                                     │         CAMADA SILVER (821 LINHAS)        │
+                                                     │        CAMADA SILVER (8.542 LINHAS)       │
                                                      │  1. Contratos de Dados (Data Contracts)   │
                                                      │  2. Sistema Ativo de Quarentena           │
                                                      │  3. Modelagem Relacional N:M ANEEL (IBGE) │
                                                      │  4. Anonimização LGPD & Agregação ENEM    │
-                                                     │  5. Auditoria de JOIN (144 Municípios)    │
+                                                     │  5. Auditoria de JOIN (chave + registros)  │
                                                      │  6. Relatório de Data Quality Profiling   │
                                                      └─────────────────────┬─────────────────────┘
                                                                            ▼
@@ -45,6 +45,12 @@
 ## 2. Aprofundamento: A Camada Silver (O Coração da Engenharia de Dados)
 
 A Camada Silver do projeto foi concebida para atender estritamente ao **Requisito 3** das diretrizes da disciplina (*"Tipagem forte, padronização de nomenclatura, chave explícita tratada, validações com quarentena, integridade relacional do join"*).
+
+### 2.0. Ingestão ANEEL em micro-batches
+- A API CKAN é lida com paginação `limit`/`offset` e retry com backoff exponencial.
+- Cada página recebida é persistida na Bronze antes do avanço do arquivo `_aneel_ingestion_checkpoint.json`.
+- Em caso de interrupção, a carga retoma do último `offset` confirmado.
+- O JSON retornado pela API é o formato da ingestão REST; o checkpoint documenta a modalidade adicional de micro-batch exigida pela rubrica.
 
 ### 2.1. Contratos de Dados (Data Contracts) & Limites Físicos
 - **Validação ANEEL:**

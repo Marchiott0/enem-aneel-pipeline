@@ -43,8 +43,8 @@ ANEEL_RESOURCE_MUNICIPIOS = os.getenv("ANEEL_RESOURCE_MUNICIPIOS", "3f841488-80a
 ANEEL_API_BASE_URL = os.getenv("ANEEL_API_BASE_URL", "https://dadosabertos.aneel.gov.br/api/3/action/datastore_search")
 
 # Parâmetros de Filtro e Escopo (Série Histórica de 5 Anos)
-ANOS_ESTUDO = [int(a.strip()) for a in os.getenv("ANOS_ESTUDO", "2019,2020,2021,2022,2023").split(",") if a.strip()]
-UF_TARGET = [uf.strip() for uf in os.getenv("UF_TARGET", "PA,AM,RO,AP,RO,RR,AC,TO").split(",") if uf.strip()]
+ANOS_ESTUDO = [int(a.strip()) for a in os.getenv("ANOS_ESTUDO", "2020,2021,2022,2023,2024").split(",") if a.strip()]
+UF_TARGET = [uf.strip() for uf in os.getenv("UF_TARGET", "PA").split(",") if uf.strip()]
 RANDOM_SEED = int(os.getenv("RANDOM_SEED", "42"))
 T0_DATE = os.getenv("T0_DATE", "2024-07-31")
 

@@ -10,11 +10,12 @@ Este documento descreve detalhadamente as bases utilizadas, suas origens oficiai
 - **Órgão Responsável:** Agência Nacional de Energia Elétrica (ANEEL) / Ministério de Minas e Energia (MME)
 - **Origem / URL Oficial:** [dadosabertos.aneel.gov.br](https://dadosabertos.aneel.gov.br/dataset/qualidade-do-servico-distribuicao)
 - **Licença de Uso:** Política de Dados Abertos do Poder Executivo Federal (Decreto nº 8.777/2016)
-- **Data da Coleta / Competência:** Série histórica de 2020 a 2024
-- **Formato na Ingestão:** JSON via API REST CKAN Datastore
+- **Data da Coleta / Competência:** indicadores ingeridos em 01/09/2026 e 10/09/2026; mapeamento Conjunto-Município ingerido em 17/09/2026. Competências utilizadas: 2020 a 2024.
+- **Formato na Ingestão:** JSON via API REST CKAN Datastore, persistido em micro-batches com checkpoint por ano/offset
 - **Recurso Principal (DEC/FEC):** `4493985c-baea-429c-9df5-3030422c71d7`
 - **Recurso de Mapeamento (indqual-municipio):** `3f841488-80a8-42f2-a6ca-e0c593b228de`
 - **Chave de Cruzamento Primária:** `IdeConjUndConsumidoras` (Bronze) $\rightarrow$ `codigo_municipio` (Silver/Gold, Código IBGE de 7 dígitos)
+- **Metadados técnicos da Bronze:** `_ingestion_time`, `_source`, `_source_object`, `_load_id` e `_record_hash` (hash estável do payload, sem os metadados variáveis)
 
 ### 1.1. Dicionário da Tabela Silver ANEEL (`data/silver/aneel/aneel_silver.parquet`)
 
@@ -70,7 +71,7 @@ Este documento descreve detalhadamente as bases utilizadas, suas origens oficiai
 
 ## 3. Tabela Silver Integrada — Silver Joined (`data/silver/joined/silver_joined.parquet`)
 
-Resultado do Inner Join relacional entre as duas bases auditadas pela chave composta `(codigo_municipio, ano)`. Contém a série temporal mensal completa de energia atrelada aos indicadores anuais do ENEM para os 144 municípios do Pará (totalizando 8.542 registros mensais).
+Resultado do Inner Join relacional entre as duas bases auditadas pela chave composta `(codigo_municipio, ano)`. Contém 8.542 registros mensais de energia atrelados aos indicadores anuais do ENEM para os 144 municípios do Pará. A coorte de modelagem documenta e exclui os município-ano com janela Jan-Jul incompleta.
 
 - **Chave Composta:** `codigo_municipio` + `ano` + `mes`
 - **Granularidade:** 1 linha por Município / Ano / Mês
@@ -104,7 +105,7 @@ Resultado do Inner Join relacional entre as duas bases auditadas pela chave comp
 
 ## 5. Dicionário da Tabela de Quarentena (`data/quarantine/`)
 
-Registros que violam contratos de schema, limites físicos ou integridade relacional são isolados nos diretórios `data/quarantine/aneel/` e `data/quarantine/enem/` com os seguintes metadados de auditoria:
+Registros que violam contratos de schema, limites físicos, ausência de indicador ou integridade relacional são isolados nos diretórios `data/quarantine/aneel/` e `data/quarantine/enem/` com os seguintes metadados de auditoria. Na ANEEL, ausência de DEC/FEC é registrada como `INDICADOR_DEC_OU_FEC_AUSENTE_NA_FONTE` antes da compatibilização histórica da tabela Silver:
 
 | Metadado de Quarentena | Tipo | Significado | Exemplo |
 | :--- | :--- | :--- | :--- |

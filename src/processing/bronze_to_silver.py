@@ -318,7 +318,35 @@ def process_aneel_silver() -> pd.DataFrame:
     logger.info(f"Mapeamento deduplicado: {len(df_mapa_clean)} vínculos únicos entre Conjunto e Município.")
 
     # 2. Carrega arquivos de Indicadores DEC/FEC da Bronze
-    arquivos_ind = sorted(list(BRONZE_ANEEL_DIR.glob("aneel_dec_fec_*.parquet")))
+    checkpoint_file = BRONZE_ANEEL_DIR / "_aneel_ingestion_checkpoint.json"
+    ingestion_checkpoint = None
+    if checkpoint_file.exists():
+        try:
+            ingestion_checkpoint = json.loads(checkpoint_file.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as exc:
+            raise ValueError(
+                f"Checkpoint da ingestão ANEEL inválido; não é seguro promover a Bronze: {exc}"
+            ) from exc
+
+        if ingestion_checkpoint.get("status") != "completed":
+            raise RuntimeError(
+                "A ingestão ANEEL ainda não foi concluída; a Bronze não pode ser promovida para a Silver."
+            )
+
+    if ingestion_checkpoint and ingestion_checkpoint.get("load_id"):
+        load_id = ingestion_checkpoint["load_id"]
+        arquivos_ind = sorted(
+            BRONZE_ANEEL_DIR.glob(f"aneel_dec_fec_*_{load_id}.parquet")
+        )
+    else:
+        # Compatibilidade somente para os artefatos antigos já existentes. Uma
+        # nova carga deve sempre gerar checkpoint e ser lida pelo load_id.
+        arquivos_ind = sorted(list(BRONZE_ANEEL_DIR.glob("aneel_dec_fec_*.parquet")))
+        if arquivos_ind:
+            logger.warning(
+                "Bronze ANEEL sem checkpoint: usando artefatos legados apenas para compatibilidade. "
+                "Execute uma nova ingestão concluída antes da apresentação final."
+            )
     if not arquivos_ind:
         raise FileNotFoundError(f"Nenhum arquivo de indicadores DEC/FEC encontrado em {BRONZE_ANEEL_DIR}")
 
@@ -413,7 +441,30 @@ def process_aneel_silver() -> pd.DataFrame:
         how="outer"
     )
 
-    # Tratamento de nulos e arrendondamento
+    # Ausências de um dos indicadores não podem desaparecer silenciosamente.
+    # Mantemos a regra histórica de preencher a métrica para não quebrar os
+    # artefatos já consumidos pelo grupo, mas registramos cada ocorrência na
+    # quarentena com a causa observável na fonte.
+    missing_indicator_mask = df_silver_aneel[[
+        "dec_horas_mensal", "fec_freq_mensal"
+    ]].isna().any(axis=1)
+    if missing_indicator_mask.any():
+        missing_indicator_rows = df_silver_aneel.loc[missing_indicator_mask].copy()
+        missing_indicator_rows["_missing_indicators"] = missing_indicator_rows.apply(
+            lambda row: ",".join(
+                column
+                for column in ["dec_horas_mensal", "fec_freq_mensal"]
+                if pd.isna(row[column])
+            ),
+            axis=1,
+        )
+        quarantine.isolate(
+            missing_indicator_rows,
+            reason="INDICADOR_DEC_OU_FEC_AUSENTE_NA_FONTE",
+            details_col="_missing_indicators",
+        )
+
+    # Tratamento de nulos e arredondamento, agora com rastreabilidade acima.
     df_silver_aneel["dec_horas_mensal"] = df_silver_aneel["dec_horas_mensal"].fillna(0.0).round(2)
     df_silver_aneel["dec_horas_max"] = df_silver_aneel["dec_horas_max"].fillna(0.0).round(2)
     df_silver_aneel["fec_freq_mensal"] = df_silver_aneel["fec_freq_mensal"].fillna(0.0).round(2)
@@ -436,6 +487,16 @@ def process_aneel_silver() -> pd.DataFrame:
 
     # Ordenação canônica
     df_silver_aneel.sort_values(by=["codigo_municipio", "ano", "mes"], inplace=True)
+
+    duplicate_key_mask = df_silver_aneel.duplicated(
+        subset=["codigo_municipio", "ano", "mes"],
+        keep=False,
+    )
+    if duplicate_key_mask.any():
+        raise ValueError(
+            "Contrato Silver ANEEL violado: existem duplicatas na chave "
+            "(codigo_municipio, ano, mes)."
+        )
 
     # 9. Gravação Idempotente no Disco
     SILVER_ANEEL_DIR.mkdir(parents=True, exist_ok=True)
@@ -659,6 +720,26 @@ def audit_join_silver(coluna_chave: str = "codigo_municipio") -> pd.DataFrame:
         if anos_comum:
             chaves_join.append("ano")
 
+    # Auditoria por chave composta e por registro. A métrica anterior era
+    # somente municipal e podia mascarar divergências entre anos.
+    chaves_enem = set(df_enem[chaves_join].itertuples(index=False, name=None))
+    chaves_aneel = set(df_aneel[chaves_join].itertuples(index=False, name=None))
+    orfaos_chaves_enem = chaves_enem - chaves_aneel
+    orfaos_chaves_aneel = chaves_aneel - chaves_enem
+    registros_orfaos_enem = sum(
+        1 for key in df_enem[chaves_join].itertuples(index=False, name=None)
+        if key not in chaves_aneel
+    )
+    registros_orfaos_aneel = sum(
+        1 for key in df_aneel[chaves_join].itertuples(index=False, name=None)
+        if key not in chaves_enem
+    )
+    total_chaves = len(chaves_enem | chaves_aneel)
+    taxa_cobertura_chaves = (
+        len(chaves_enem & chaves_aneel) / total_chaves * 100
+        if total_chaves > 0 else 0.0
+    )
+
     logger.info(f"Executando Inner Join ENEM x ANEEL usando as chaves relacionais: {chaves_join}")
     df_joined = pd.merge(
         df_aneel,
@@ -697,6 +778,10 @@ def audit_join_silver(coluna_chave: str = "codigo_municipio") -> pd.DataFrame:
 | **Órfãos Exclusivos do ENEM (sem ANEEL)** | **{len(orfaos_enem)}** | Em Conformidade (0 perdas) |
 | **Órfãos Exclusivos da ANEEL (sem ENEM)** | **{len(orfaos_aneel)}** | Em Conformidade (0 perdas) |
 | **Taxa de Cobertura do Join (Coverage Rate)** | **{taxa_cobertura:.2f}%** | **Excelente / Sem Viés** |
+| **Chaves Compostas Casadas** | **{len(chaves_enem & chaves_aneel)}** | Auditoria por `{chaves_join}` |
+| **Órfãos por Chave Composta (ENEM / ANEEL)** | **{len(orfaos_chaves_enem)} / {len(orfaos_chaves_aneel)}** | Nenhuma chave sem correspondência |
+| **Registros Órfãos (ENEM / ANEEL)** | **{registros_orfaos_enem} / {registros_orfaos_aneel}** | Contagem linha a linha |
+| **Cobertura das Chaves Compostas** | **{taxa_cobertura_chaves:.2f}%** | Auditoria complementar |
 | **Total de Registros na Silver Joined** | **{len(df_joined):,}** | Base Consolidada Mês a Mês |
 
 ---
@@ -733,6 +818,13 @@ def audit_join_silver(coluna_chave: str = "codigo_municipio") -> pd.DataFrame:
         "municipios_casados": len(casaram),
         "orfaos_enem": list(orfaos_enem),
         "orfaos_aneel": list(orfaos_aneel),
+        "chaves_join_enem_total": len(chaves_enem),
+        "chaves_join_aneel_total": len(chaves_aneel),
+        "orfaos_chaves_enem": [list(key) for key in sorted(orfaos_chaves_enem)],
+        "orfaos_chaves_aneel": [list(key) for key in sorted(orfaos_chaves_aneel)],
+        "registros_orfaos_enem": registros_orfaos_enem,
+        "registros_orfaos_aneel": registros_orfaos_aneel,
+        "taxa_cobertura_chaves_percentual": round(taxa_cobertura_chaves, 2),
         "taxa_cobertura_percentual": round(taxa_cobertura, 2),
         "total_registros_silver_joined": len(df_joined),
     }

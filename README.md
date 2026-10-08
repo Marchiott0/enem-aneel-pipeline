@@ -2,6 +2,8 @@
 
 Projeto desenvolvido para a disciplina de **Engenharia de Dados e Machine Learning**, estruturando um pipeline ponta a ponta que conecta a ingestão de bases públicas reais à recomendação orientada à tomada de decisão.
 
+> **Apresentação Oficial para a Banca:** Acesse o notebook interativo [`notebooks/apresentacao_oficial.ipynb`](notebooks/apresentacao_oficial.ipynb) — estruturado estritamente segundo a lauda de avaliação da disciplina, dividido em 3 partes para a divisão do grupo (Bronze/ENEM, Silver/ANEEL, Gold/Treinamento), com falas curtas de apoio e tabela visual das previsões dos 50 municípios prioritários.
+
 ---
 
 ## 1. A Pergunta de Negócio e Decisão
@@ -42,7 +44,7 @@ isaacprofessor/
     ├── config.py                  # Caminhos, constantes e sementes
     ├── ingestion/                 # Módulos de extração e ingestão
     │   ├── __init__.py
-    │   ├── ingest_aneel_api.py    # Ingestão JSON via REST API (ANEEL CKAN)
+    │   ├── ingest_aneel_api.py    # Ingestão JSON via REST + micro-batch/checkpoint (ANEEL CKAN)
     │   └── ingest_enem_csv.py     # Ingestão CSV em chunks (INEP ENEM)
     ├── processing/                # Pipeline de transformação Medalhão
     │   ├── __init__.py
@@ -141,5 +143,5 @@ Em conformidade com as diretrizes da disciplina, declaramos o uso de ferramentas
 | Base de Dados | Órgão / Instituição | Formato | Licença | URL de Acesso | Data de Coleta |
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | **Microdados do ENEM** | INEP / MEC | CSV (Arquivo) | Aberta / Domínio Público Federal | [gov.br/inep](https://www.gov.br/inep/pt-br/acesso-a-informacao/dados-abertos/microdados/enem) | 26/08/2026 |
-| **Indicadores DEC/FEC** | ANEEL | JSON (API REST CKAN) | Política de Dados Abertos do Poder Executivo Federal | [dadosabertos.aneel.gov.br](https://dadosabertos.aneel.gov.br/api/3/action/datastore_search) | 26/08/2026 |
+| **Indicadores DEC/FEC** | ANEEL | JSON (API REST CKAN) + micro-batches | Política de Dados Abertos do Poder Executivo Federal | [dadosabertos.aneel.gov.br](https://dadosabertos.aneel.gov.br/api/3/action/datastore_search) | 01/09/2026 e 10/09/2026 |
 
